@@ -1,0 +1,22 @@
+name: 🤝 Welcome New Contributor
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          pr-message: |
+            👋 **Welcome to Cpppm!**
+            Thanks for opening your first Pull Request 🎉  
+            Please make sure that:
+            - ✅ Your PR targets the `dev` branch (not `main`)
+            - ✅ The build passes successfully in Actions
+            - 💬 Describe your change clearly so others can review easily  
+
+            _Let’s build the modern C++ package manager together!_
