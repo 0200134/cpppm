@@ -1,0 +1,6 @@
+name = "myapp"
+version = "0.1.0"
+
+[dependencies]
+# 키 = URL (또는 경로)
+fmt = "https://github.com/fmtlib/fmt"
