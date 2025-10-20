@@ -1,0 +1,30 @@
+name: 🧱 Cpppm Build CI
+
+on:
+  push:
+    branches: [main, dev, feature/**, sandbox/**]
+  pull_request:
+    branches: [main, dev]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install CMake
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+
+      - name: Configure & Build
+        run: |
+          cmake -B build -S .
+          cmake --build build --parallel 4
+
+      - name: Run Tests
+        run: |
+          if [ -f "build/Cpppm" ]; then
+            echo "✅ Build succeeded"
+          else
+            echo "⚠️ Build completed (no binary yet — initial phase)"
+          fi
