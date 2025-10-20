@@ -1,2 +1,0 @@
-# cpppm
-cplusplus  package  manager
