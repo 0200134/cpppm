@@ -1,23 +1,26 @@
+// cpppm 0.3-dev
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <map>
 #include <filesystem>
+#include <future>
+#include <mutex>
 #include <cstdlib>
 #include <sstream>
+#include <vector>
 #include "cpppm/version.h"
 
 namespace fs = std::filesystem;
+std::mutex cout_mtx;
 
-struct Manifest {
-    std::map<std::string, std::string> deps;
-};
-
+struct Manifest { std::map<std::string, std::string> deps; };
 static fs::path manifestPath() { return fs::current_path() / "cpppm.toml"; }
 static fs::path depsDir() { return fs::current_path() / "deps"; }
+static fs::path lockPath() { return fs::current_path() / "cpppm.lock"; }
 
 static std::string trim(const std::string &s){
-    size_t b=0, e=s.size();
+    size_t b=0,e=s.size();
     while(b<e && isspace((unsigned char)s[b])) ++b;
     while(e>b && isspace((unsigned char)s[e-1])) --e;
     return s.substr(b,e-b);
@@ -44,54 +47,96 @@ static Manifest readManifest(){
 }
 
 static void system_checked(const std::string &cmd){
-    std::cout << "  -> $ " << cmd << std::endl;
     int ret = std::system(cmd.c_str());
     if(ret != 0) throw std::runtime_error("Command failed: "+cmd);
 }
 
-static void install_one(const std::string &name,const std::string &url){
+static std::string git_head_commit(const fs::path &dir){
+    std::string cmd = "git -C " + dir.string() + " rev-parse HEAD > .git_head";
+    std::system(cmd.c_str());
+    std::ifstream in(dir/".git_head");
+    std::string hash; std::getline(in,hash);
+    fs::remove(dir/".git_head");
+    return hash;
+}
+
+static void install_one(const std::string &name,const std::string &url,std::map<std::string,std::string>& lock){
     fs::path pkgDir=depsDir()/name;
+    {
+        std::lock_guard<std::mutex> lk(cout_mtx);
+        std::cout << "[cpppm] Installing " << name << "...\n";
+    }
     if(fs::exists(pkgDir)) {
-        std::cout << name << " already installed, skipping.\n";
+        std::lock_guard<std::mutex> lk(cout_mtx);
+        std::cout << "  -> " << name << " already exists. Skipping.\n";
+        lock[name] = git_head_commit(pkgDir);
         return;
     }
-    std::cout << "Cloning "<<name<<" from "<<url<<"...\n";
+
     fs::create_directories(depsDir());
-    system_checked("git clone --depth 1 "+url+" "+pkgDir.string());
+    std::string cloneCmd = "git clone --depth 1 " + url + " " + pkgDir.string();
+    try {
+        system_checked(cloneCmd);
+    } catch (...) {
+        std::lock_guard<std::mutex> lk(cout_mtx);
+        std::cerr << "  -> clone failed for " << name << ", retrying...\n";
+        system_checked(cloneCmd);
+    }
 
     fs::path cmakeFile = pkgDir/"CMakeLists.txt";
     if(fs::exists(cmakeFile)){
-        std::cout << "Building "<<name<<" via CMake...\n";
         fs::path buildDir = pkgDir/"build";
         fs::create_directories(buildDir);
-        system_checked("cmake -B "+buildDir.string()+" -S "+pkgDir.string());
-        system_checked("cmake --build "+buildDir.string()+" --parallel 4");
+        try {
+            system_checked("cmake -B "+buildDir.string()+" -S "+pkgDir.string());
+            system_checked("cmake --build "+buildDir.string()+" --parallel");
+        } catch (...) {
+            std::lock_guard<std::mutex> lk(cout_mtx);
+            std::cerr << "  -> build failed for " << name << "\n";
+        }
     }
+    lock[name] = git_head_commit(pkgDir);
     std::ofstream ok(pkgDir/"INSTALL_OK");
-    ok << name << " built by cpppm "<<CPPPM_VERSION<<"\n";
+    ok << name << " built by cpppm " << CPPPM_VERSION << "\n";
 }
 
 static void cmd_install(){
     Manifest m=readManifest();
     if(m.deps.empty()){
-        std::cout << "cpppm: no deps.\n"; return;
+        std::cout << "cpppm: no dependencies found.\n"; return;
     }
     fs::create_directories(depsDir());
+
+    std::map<std::string,std::string> lock;
+    std::vector<std::future<void>> tasks;
+
+    unsigned threads = std::thread::hardware_concurrency();
+    if(threads < 2) threads = 2;
+    std::cout << "[cpppm] Using " << threads << " threads.\n";
+
     for(auto &kv:m.deps){
-        try { install_one(kv.first,kv.second); }
-        catch(const std::exception &e){
-            std::cerr << "Error installing "<<kv.first<<": "<<e.what()<<"\n";
-        }
+        tasks.push_back(std::async(std::launch::async, [&]{
+            try { install_one(kv.first,kv.second,lock); }
+            catch(const std::exception &e){
+                std::lock_guard<std::mutex> lk(cout_mtx);
+                std::cerr << "[error] " << kv.first << ": " << e.what() << "\n";
+            }
+        }));
     }
-    std::cout << "cpppm: install complete.\n";
+
+    for(auto &t:tasks) t.wait();
+
+    // write lockfile
+    std::ofstream out(lockPath());
+    out << "# cpppm lockfile\n";
+    for(auto &kv:lock)
+        out << kv.first << " = \"" << kv.second << "\"\n";
+    std::cout << "[cpppm] lockfile written: cpppm.lock\n";
 }
 
 static void help(){
     std::cout << "cpppm "<<CPPPM_VERSION<<"\n"
-              << "Usage: cpppm <command> [args]\n"
-              << "Commands:\n"
-              << "  install   clone + build deps via cmake\n"
-              << "  help      show this help\n";
+              << "Usage: cpppm install | help\n";
 }
 
 int main(int argc,char**argv){
