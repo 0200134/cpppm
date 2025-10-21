@@ -136,20 +136,14 @@ static void cmd_install() {
 
     for (auto &t : tasks) t.wait();
 
-    // Write lockfile
-    {
-        std::ofstream out(lockPath());
-        out << "# cpppm lockfile\n";
-        for (auto &kv : lock)
-            out << kv.first << " = \"" << kv.second << "\"\n";
-    }
+    std::ofstream out(lockPath());
+    out << "# cpppm lockfile\n";
+    for (auto &kv : lock)
+        out << kv.first << " = \"" << kv.second << "\"\n";
 
-    // Write deps CMake file
-    {
-        std::ofstream cmakeDeps(cmakeDepsPath());
-        for (auto &kv : m.deps)
-            cmakeDeps << "add_subdirectory(${CMAKE_SOURCE_DIR}/deps/" << kv.first << ")\n";
-    }
+    std::ofstream cmakeDeps(cmakeDepsPath());
+    for (auto &kv : m.deps)
+        cmakeDeps << "add_subdirectory(${CMAKE_SOURCE_DIR}/deps/" << kv.first << ")\n";
 
     std::cout << "[cpppm] lockfile written: cpppm.lock\n";
     std::cout << "[cpppm] generated: deps/CMakeDeps.cmake\n";
