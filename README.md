@@ -91,3 +91,6 @@ Planned features:
 
 cpppm is still evolving — to become the simplest and most reliable
 C++ package manager for small teams and solo devs.
+
+
+> 🗓 **2026년 중 공식 오픈 예정**
