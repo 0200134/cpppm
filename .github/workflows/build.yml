@@ -1,4 +1,4 @@
-name: Cpppm Build CI
+name: 🧱 Cpppm Build & Test CI
 
 on:
   push:
@@ -13,21 +13,26 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
       - uses: actions/checkout@v4
-      - name: Configure
-        run: cmake -B build -S .
-      - name: Build
-        run: cmake --build build --parallel 4
-      - name: Run help
-        run: |
-          ./build/cpppm --help || true
-        shell: bash
+
+      - name: ⚙️ Configure
+        run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
+
+      - name: 🧩 Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: 🧪 Run help
         if: runner.os != 'Windows'
-      - name: Run help (Windows)
-        run: |
-          .\\build\\Debug\\cpppm.exe --help || .\\build\\cpppm.exe --help || true
-        shell: pwsh
+        run: ./build/cpppm --help || true
+        shell: bash
+
+      - name: 🧪 Run help (Windows)
         if: runner.os == 'Windows'
-      - name: CTest
-        run: ctest --test-dir build --output-on-failure
+        run: |
+          .\build\Release\cpppm.exe --help || .\build\Debug\cpppm.exe --help || true
+        shell: pwsh
+
+      - name: 🧾 Run CTest
+        run: ctest --test-dir build -C Release --output-on-failure
