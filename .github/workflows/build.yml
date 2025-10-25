@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 🛠️ Self-Heal Tests
+        run: python3 scripts/self_heal_tests.py
+
       - name: ⚙️ Configure
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
 
