@@ -1,60 +1,103 @@
 🧩 cpppm — C++ Package Manager (to become…)
 
-to become the simplest, cross-platform, zero-dependency package manager for C++.
+> To become the simplest, cross-platform, zero-dependency package manager for C++.
 
-------------------------------------------------------------
+
+
+     
+
+
+---
+
 🚀 Overview
-------------------------------------------------------------
-cpppm is a minimal package manager that treats dependencies as git + cmake glue.
 
-No database, no registry —
-just plain git clone + add_subdirectory() + CMake integration.
+cpppm is a minimal, self-contained package manager that treats dependencies as
+Git repositories + CMake glue code.
 
-Ideal for small, experimental, or bootstrap projects
-that want full reproducibility without an external service.
+No centralized registry, no lock-in, no complexity — just:
 
-Directory layout example:
+git clone + add_subdirectory() + CMake
+
+It’s designed for:
+
+Embedded, offline, or air-gapped builds
+
+Experimental or bootstrap compiler projects
+
+Teams that need 100% reproducible dependency graphs
+
+
+
+---
+
+📂 Directory Layout
 
 your_project/
- ├── CMakeLists.txt
- ├── cpppm.cfg
- ├── cmake/cpppm.cmake
- ├── external/
- └── tools/cpppm.cpp
+├── CMakeLists.txt
+├── cpppm.cfg
+├── cmake/
+│   └── cpppm.cmake
+├── external/
+└── tools/
+    └── cpppm.cpp
 
-------------------------------------------------------------
+
+---
+
 ✨ Features
-------------------------------------------------------------
-- Zero installation — just compile tools/cpppm.cpp
-- Simple manifest (cpppm.cfg)
-- Git-based dependency fetch
-- Auto-generated CMake stub
-- Works on Linux / macOS / Windows
-- Perfect for CMake + Git projects and embedded workflows
 
-------------------------------------------------------------
+🧱 Zero installation — just compile tools/cpppm.cpp
+
+🧾 Simple manifest (cpppm.cfg)
+
+🔗 Git-based dependency fetch
+
+⚙️ Auto-generated CMake stub
+
+🧩 Cross-platform: Linux / macOS / Windows
+
+🧠 Ideal for: CMake + Git + reproducible workflows
+
+🚫 No registry. No lock-in.
+
+
+
+---
+
 🔧 Quick Start
-------------------------------------------------------------
+
+# Compile cpppm
 c++ -std=c++17 -O2 -o cpppm tools/cpppm.cpp
+
+# Initialize
 ./cpppm init
+
+# Add dependencies
 ./cpppm add fmt https://github.com/fmtlib/fmt.git tag=10.2.1
 ./cpppm add catch2 https://github.com/catchorg/Catch2.git tag=v3.5.4
+
+# Install + Build
 ./cpppm install
 cmake -B build -S .
 cmake --build build
 
-------------------------------------------------------------
-🧾 Example Manifest
-------------------------------------------------------------
+
+---
+
+🧾 Example Manifest (cpppm.cfg)
+
 name=myproj
 dep=fmt|https://github.com/fmtlib/fmt.git|tag=10.2.1|subdir=
 dep=catch2|https://github.com/catchorg/Catch2.git|tag=v3.5.4|subdir=
 
-Each line = dep=<name>|<git-url>|tag=<tag-or-branch>|subdir=<optional-path>
+Each line =
+dep=<name>|<repo_url>|tag=<version>|subdir=<path>
 
-------------------------------------------------------------
+
+---
+
 ⚙️ CMake Integration
-------------------------------------------------------------
+
 cmake_minimum_required(VERSION 3.16)
 project(myproj CXX)
 set(CMAKE_CXX_STANDARD 17)
@@ -62,35 +105,87 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(myproj src/main.cpp)
 include(cmake/cpppm.cmake OPTIONAL)
 
-------------------------------------------------------------
+
+---
+
 🧹 Clean Up
-------------------------------------------------------------
+
 ./cpppm clean
 
-Removes external/ and the generated CMake stub.
+Removes external/ and generated CMake stubs.
 
-------------------------------------------------------------
+
+---
+
 🧠 Philosophy
-------------------------------------------------------------
+
 cpppm exists for clarity and reproducibility —
-it’s not meant to compete with vcpkg or conan.
-It’s for those who want a transparent, self-contained build
-and the freedom to see every line of code you depend on.
+not to compete with heavy package managers like vcpkg or conan.
 
-No registry. No lock-in. Just Git and CMake.
+It’s for developers who want:
 
-------------------------------------------------------------
-🔭 To be continued…
-------------------------------------------------------------
-Planned features:
-- Dependency lockfile (sha1 pinning)
-- Cached fetch for offline builds
-- Parallel clone & update
-- Integration with find_package
-- cpppm publish (share manifest)
+Total transparency
 
-cpppm is still evolving — to become the simplest and most reliable
-C++ package manager for small teams and solo devs.
+Zero external dependencies
+
+Offline, auditable, Git-only builds
 
 
-> 🗓 **2026년 중 공식 오픈 예정**
+> No registry. No lock-in. 100% deterministic.
+
+
+
+
+---
+
+🔭 Roadmap (2025–2027)
+
+Phase	Feature	Status
+
+Q4 2025	CMake stub generator	✅ Done
+Q1 2026	SHA-1 lockfile support	🧩 Planned
+Q2 2026	Cached/offline fetch	🧩 Planned
+Q3 2026	Parallel clone/update	🧩 Planned
+Q4 2026	Integration with find_package	🧩 Planned
+Q1 2027	cpppm publish (manifest sharing)	🧩 Planned
+Q3 2027	Stable LTS v1.0	🧱 Target
+
+
+
+---
+
+🧭 Ecosystem Integration
+
+cpppm is part of the R3C Foundation Ecosystem
+(C++ → Rust → NASM LLVM-Zero compiler pipeline).
+
+It acts as the dependency and reproducibility layer for:
+
+🧱 R3C Core compiler
+
+🦀 Rust-LTSS / Embedded-LTSS
+
+🌌 Beyond-LLVM experiments
+
+
+
+---
+
+🗓 Official Release
+
+> 📅 cpppm v1.0 Stable Release — Target: 2026 H2
+Continuous nightly builds are auto-generated by R3C Foundation CI.
+🔗 View Releases →
+
+
+
+
+---
+
+⚖️ License
+
+MIT License © R3C Foundation
+Open, transparent, and reproducible.
+
+
+---
